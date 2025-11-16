@@ -11,15 +11,21 @@ export const createApp = (): Express => {
 
   // Middleware
   const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-    : ['http://localhost:3000','https://leadblock-fe.vercel.app/'];
+    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim().replace(/\/$/, ''))
+    : ['http://localhost:3000', 'https://leadblock-fe.vercel.app'];
   
   app.use(cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, or same-origin requests)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) {
+        return callback(null, true);
+      }
+      // Remove trailing slash for comparison
+      const originWithoutSlash = origin.replace(/\/$/, '');
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes(originWithoutSlash)) {
         callback(null, true);
       } else {
+        console.log('CORS blocked origin:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     },
