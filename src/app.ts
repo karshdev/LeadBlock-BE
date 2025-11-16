@@ -10,9 +10,7 @@ export const createApp = (): Express => {
   const app = express();
 
   // Middleware
-  const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim().replace(/\/$/, ''))
-    : ['http://localhost:3000', 'https://leadblock-fe.vercel.app'];
+  const allowedOrigins = ['http://localhost:3000', 'https://leadblock-fe.vercel.app'];
   
   app.use(cors({
     origin: (origin, callback) => {
