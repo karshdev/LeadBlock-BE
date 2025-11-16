@@ -22,3 +22,8 @@ export interface UpdateLeadDto {
   status?: 'active' | 'inactive';
 }
 
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+}
