@@ -10,8 +10,19 @@ export const createApp = (): Express => {
   const app = express();
 
   // Middleware
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+    : ['http://localhost:3000','https://leadblock-fe.vercel.app/'];
+  
   app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or same-origin requests)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   }));
   app.use(morgan('dev'));
@@ -26,6 +37,20 @@ export const createApp = (): Express => {
 
   // Protected routes
   app.use('/api/leads', leadRoutes);
+
+  // Root route
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      success: true,
+      message: 'LeadBlocks API Server',
+      version: '1.0.0',
+      endpoints: {
+        health: '/health',
+        auth: '/api/auth',
+        leads: '/api/leads',
+      },
+    });
+  });
 
   // Health check
   app.get('/health', (req, res) => {
