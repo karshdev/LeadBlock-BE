@@ -30,8 +30,15 @@ export class UserModel {
       return null;
     }
 
-    // For initial setup, if password is not hashed, hash it
-    if (!user.password.startsWith('$2a$')) {
+    // Prevent sending hashed password as credentials (common mistake)
+    // If the provided password looks like a bcrypt hash, reject it
+    if (credentials.password.startsWith('$2a$') || credentials.password.startsWith('$2b$')) {
+      return null; // Don't allow hashed passwords as login credentials
+    }
+
+    // Ensure user password is hashed (check for bcrypt hash prefixes)
+    // If password in DB is not hashed, hash it now
+    if (!user.password.startsWith('$2a$') && !user.password.startsWith('$2b$')) {
       const hashed = await hashPassword(credentials.password);
       user.password = hashed;
       const users = this.readUsers();
@@ -41,6 +48,7 @@ export class UserModel {
       this.writeUsers(updatedUsers);
     }
 
+    // Compare the plain text password from request with the hashed password in DB
     const isValid = await comparePassword(credentials.password, user.password);
     return isValid ? user : null;
   }
