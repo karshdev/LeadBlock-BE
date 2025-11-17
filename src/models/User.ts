@@ -3,6 +3,8 @@ import { join } from 'path';
 import { User, LoginDto } from '../types/auth';
 import { hashPassword, comparePassword } from '../utils/auth';
 
+// Simple path resolution: __dirname will be dist/models in production, src/models in dev
+// So ../data/users.json resolves to dist/data/users.json (prod) or src/data/users.json (dev)
 const USERS_FILE = join(__dirname, '../data/users.json');
 
 export class UserModel {
@@ -30,25 +32,21 @@ export class UserModel {
       return null;
     }
 
-    // Prevent sending hashed password as credentials (common mistake)
-    // If the provided password looks like a bcrypt hash, reject it
+    // Prevent sending hashed password as credentials
     if (credentials.password.startsWith('$2a$') || credentials.password.startsWith('$2b$')) {
-      return null; // Don't allow hashed passwords as login credentials
+      return null;
     }
 
-    // Ensure user password is hashed (check for bcrypt hash prefixes)
-    // If password in DB is not hashed, hash it now
+    // Ensure user password is hashed
     if (!user.password.startsWith('$2a$') && !user.password.startsWith('$2b$')) {
       const hashed = await hashPassword(credentials.password);
       user.password = hashed;
       const users = this.readUsers();
-      const updatedUsers = users.map((u) =>
-        u.id === user.id ? user : u
-      );
+      const updatedUsers = users.map((u) => (u.id === user.id ? user : u));
       this.writeUsers(updatedUsers);
     }
 
-    // Compare the plain text password from request with the hashed password in DB
+    // Compare plain text password with hashed password
     const isValid = await comparePassword(credentials.password, user.password);
     return isValid ? user : null;
   }
